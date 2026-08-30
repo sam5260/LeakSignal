@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+* {
+  border-color: theme('colors.base.600');
+}
+
+html, body {
+  background-color: theme('colors.base.950');
+  color: theme('colors.ink.100');
+}
+
+body {
+  background-image: theme('backgroundImage.grid-fade');
+  background-size: 22px 22px;
+}
+
+::selection {
+  background: rgba(62, 142, 247, 0.35);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: theme('colors.base.600'); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: theme('colors.base.500'); }
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(240, 70, 108, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(240, 70, 108, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 70, 108, 0); }
+}
+.pulse-critical {
+  animation: pulse-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
