@@ -61,6 +61,24 @@ def load_csv_to_db(csv_path):
     print(f"Successfully loaded {len(events)} network events into the database.")
     db.close()
 
+def process_csv_stream(file_stream):
+    reader = csv.DictReader(file_stream)
+    events = []
+    for row in reader:
+        events.append({
+            'host_id': row['host_id'],
+            'timestamp': datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S"),
+            'src_ip': row['src_ip'],
+            'dst_ip': row['dst_ip'],
+            'dst_port': int(row['port']),
+            'protocol': row['protocol'],
+            'bytes_sent': int(row['bytes_sent']),
+            'bytes_received': int(row['bytes_received']),
+            'duration': int(row['duration']),
+            'destination_category': row['destination_category']
+        })
+    return events
+
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     csv_file = os.path.join(base_dir, "demo_data", "dataset.csv")
