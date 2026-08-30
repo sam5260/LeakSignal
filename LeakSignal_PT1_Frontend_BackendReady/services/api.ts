@@ -19,15 +19,8 @@ import {
   mockRiskDistribution,
 } from "@/lib/mockData";
 
-const BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  ""
-).replace(/\/$/, "");
-
-// Mock data is explicit opt-in only. Backend integration must fail visibly unless
-// NEXT_PUBLIC_USE_MOCKS=true is intentionally set for UI-only development.
-const USE_MOCK_FALLBACK = true;
+const BASE_URL = "https://leaksignal.onrender.com";
+const USE_MOCK_FALLBACK = false;
 
 class ApiError extends Error {
   status?: number;
