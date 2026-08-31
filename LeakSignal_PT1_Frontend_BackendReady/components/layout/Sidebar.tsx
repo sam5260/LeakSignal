@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, MonitorSmartphone, ShieldAlert, Radar } from "lucide-react";
+import { LayoutGrid, MonitorSmartphone, ShieldAlert, Radar, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: LayoutGrid, match: (p: string) => p === "/" },
+  { href: "/upload", label: "Upload", icon: Upload, match: (p: string) => p === "/upload" },
   { href: "/hosts/FIN-PC-07", label: "Hosts", icon: MonitorSmartphone, match: (p: string) => p.startsWith("/hosts") },
-  { href: "/alerts/ALRT-1042", label: "Alerts", icon: ShieldAlert, match: (p: string) => p.startsWith("/alerts") },
+  { href: "/alerts", label: "Alerts", icon: ShieldAlert, match: (p: string) => p.startsWith("/alerts") },
 ];
 
 export function Sidebar() {

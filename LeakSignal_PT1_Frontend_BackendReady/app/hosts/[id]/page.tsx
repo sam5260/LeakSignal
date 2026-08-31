@@ -9,7 +9,13 @@ import { api } from "@/services/api";
 
 export default async function HostInvestigationPage({ params }: { params: any }) {
   const { id } = await params;
-  const host = await api.getHostProfile(decodeURIComponent(id));
+  const hostId = decodeURIComponent(id);
+
+  // Fetch both profile and timeline in parallel
+  const [host, timeline] = await Promise.all([
+    api.getHostProfile(hostId),
+    api.getHostTimeline(hostId),
+  ]);
 
   return (
     <DashboardShell title="Host Investigation" subtitle={`Behavioral profile and evidence for ${host.id}`}>
@@ -50,7 +56,7 @@ export default async function HostInvestigationPage({ params }: { params: any })
               <Moon className="h-4.5 w-4.5 text-ink-500" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-ink-700">Repeated Off-Hours Sessions</p>
+              <p className="text-xs uppercase tracking-wide text-ink-700">Off-Hours Sessions</p>
               <p className="font-mono text-sm text-ink-100">Night-time activity count</p>
             </div>
           </div>
@@ -61,7 +67,7 @@ export default async function HostInvestigationPage({ params }: { params: any })
       </div>
 
       <div className="mt-4">
-        <ActivityTimeline days={host.timeline} />
+        <ActivityTimeline days={timeline.length > 0 ? timeline : host.timeline} />
       </div>
     </DashboardShell>
   );

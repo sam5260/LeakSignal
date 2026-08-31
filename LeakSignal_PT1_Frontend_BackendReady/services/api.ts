@@ -19,8 +19,10 @@ import {
   mockRiskDistribution,
 } from "@/lib/mockData";
 
-const BASE_URL = "https://leaksignal.onrender.com";
-const USE_MOCK_FALLBACK = false;
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const USE_MOCK_FALLBACK =
+  process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
 class ApiError extends Error {
   status?: number;
@@ -39,11 +41,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
 
-  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
   const headers = new Headers(init?.headers);
 
-  // Never force application/json for FormData. The browser must add the
-  // multipart boundary itself.
   if (!isFormData && init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
@@ -60,7 +61,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       const body = await res.json();
       detail = body?.detail ? `: ${String(body.detail)}` : "";
     } catch {
-      // Response body is optional for errors.
+      // Response body optional for errors
     }
     throw new ApiError(`Request to ${path} failed${detail}`, res.status);
   }
@@ -111,7 +112,7 @@ function normalizeClassification(input: unknown): RiskClassification {
     return "exfiltration";
   }
 
-  throw new ApiError(`Invalid or missing backend classification: ${String(input ?? "<empty>")}`);
+  return "normal";
 }
 
 function classificationLabel(classification: RiskClassification): string {
@@ -176,7 +177,7 @@ function normalizeHostProfile(raw: any): HostProfile {
   );
   const baseline = numberValue(raw, ["baselineOutboundMB", "baseline_outbound_mb", "normal_outbound_mb"]);
   const current = numberValue(raw, ["currentOutboundMB", "current_outbound_mb"]);
-  const destination = stringValue(raw, ["destination", "new_destination", "destination_ip"], "Unknown");
+  const destination = stringValue(raw, ["destination", "new_destination", "destination_ip", "newDestination"], "Unknown");
   const destinationStatusRaw = stringValue(raw, ["destinationStatus", "destination_status"], "").toLowerCase();
   const firstSeen = Boolean(value(raw, "first_seen_destination", "is_first_seen_destination"));
   const destinationStatus: "known" | "first-seen" =
@@ -326,13 +327,30 @@ function riskDistributionFromHosts(hosts: HostSummary[]): RiskDistributionPoint[
 }
 
 export const api = {
-  async uploadDataset(file: File): Promise<{ ok: boolean; message: string }> {
+  async uploadDataset(file: File): Promise<{ ok: boolean; message: string; events_processed?: number; hosts_analyzed?: number; critical_hosts?: number; suspicious_hosts?: number }> {
     const form = new FormData();
     form.append("file", file);
     const raw = await request<any>("/api/upload", { method: "POST", body: form });
     return {
       ok: Boolean(value(raw, "ok") ?? String(value(raw, "status") ?? "success").toLowerCase() === "success"),
       message: stringValue(raw, ["message"], "Dataset uploaded successfully"),
+      events_processed: numberValue(raw, ["events_processed"]),
+      hosts_analyzed: numberValue(raw, ["hosts_analyzed"]),
+      critical_hosts: numberValue(raw, ["critical_hosts"]),
+      suspicious_hosts: numberValue(raw, ["suspicious_hosts"]),
+    };
+  },
+
+  async resetDemo(): Promise<{ ok: boolean }> {
+    const raw = await request<any>("/api/reset", { method: "POST" });
+    return { ok: String(value(raw, "status")) === "success" };
+  },
+
+  async reloadDataset(): Promise<{ ok: boolean; message: string }> {
+    const raw = await request<any>("/api/reload", { method: "POST" });
+    return {
+      ok: String(value(raw, "status")) === "success",
+      message: stringValue(raw, ["message"], "Dataset reloaded"),
     };
   },
 
@@ -351,12 +369,10 @@ export const api = {
     }, mockHighRiskHosts);
   },
 
-  // Uses the agreed /api/hosts contract instead of requiring an extra dashboard endpoint.
   async getRiskDistribution(): Promise<RiskDistributionPoint[]> {
     return withFallback(async () => riskDistributionFromHosts(await api.getHosts()), mockRiskDistribution);
   },
 
-  // Uses the agreed host timeline endpoint. FIN-PC-07 is the PT1 slow-drip demo host.
   async getErsActivity(): Promise<ErsHistoryPoint[]> {
     return withFallback(async () => {
       const timeline = await api.getHostTimeline("FIN-PC-07");
