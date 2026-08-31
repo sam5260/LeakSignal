@@ -100,10 +100,11 @@ async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get
             # 11. Calculate real ERS
             final_ers, classification = calculate_ers(signals)
 
-            # 12. Persist ERS on host profile
-            profile.current_ers = final_ers
-            profile.current_classification = classification
-            host.risk_state = classification
+            # 12. Persist ERS on host profile (keep highest — worst-case posture)
+            if final_ers > (profile.current_ers or 0):
+                profile.current_ers = final_ers
+                profile.current_classification = classification
+                host.risk_state = classification
 
             # DO NOT update baseline with suspicious event — prevents poisoning
 
