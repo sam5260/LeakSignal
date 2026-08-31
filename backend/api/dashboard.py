@@ -44,7 +44,4 @@ def get_dashboard(db: Session = Depends(get_db)):
         "suspicious_hosts": suspicious,
         "monitor_hosts": 0,
         "alerts_today": alerts_today,
-        "_debug_alerts_total": alerts_today,
-        "_debug_hosts_scanned": len(hosts),
-        "_debug_version": "3.1",
     }
