@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db, DBAlert, DBHost, DBHostProfile, DBNetworkEvent, DBHostProfile, DBERSHistory, reset_database
-from ingestion.csv_loader import load_csv_to_db
+from ingestion.csv_loader import process_csv_stream
 import os
 
 router = APIRouter()
@@ -112,7 +112,7 @@ def reset_demo(db: Session = Depends(get_db)):
 
 @router.post("/api/reload")
 def reload_dataset(db: Session = Depends(get_db)):
-    """Reset + reload the demo dataset."""
+    """Reset + reload the demo dataset through the full detection pipeline."""
     reset_database()
 
     dataset_path = os.path.join(
@@ -122,5 +122,11 @@ def reload_dataset(db: Session = Depends(get_db)):
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="dataset.csv not found")
 
-    load_csv_to_db(dataset_path)
-    return {"status": "success", "message": "Dataset reloaded from demo_data/dataset.csv"}
+    with open(dataset_path, 'r', encoding='utf-8') as f:
+        events = process_csv_stream(f)
+
+    if not events:
+        raise HTTPException(status_code=400, detail="dataset.csv contains no valid events.")
+
+    from api.upload import run_detection_pipeline
+    return run_detection_pipeline(db, events)

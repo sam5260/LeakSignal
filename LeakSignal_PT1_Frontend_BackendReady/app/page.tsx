@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Activity, ShieldAlert, MonitorSmartphone, TriangleAlert } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";

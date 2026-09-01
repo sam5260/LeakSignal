@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Moon } from "lucide-react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { ERSGauge } from "@/components/hosts/ERSGauge";

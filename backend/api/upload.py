@@ -18,18 +18,12 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.post("/api/upload")
-async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    content = await file.read()
-    try:
-        file_stream = io.StringIO(content.decode("utf-8"))
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid file encoding. Expected UTF-8 CSV.")
-
-    events = process_csv_stream(file_stream)
-
-    if not events:
-        raise HTTPException(status_code=400, detail="CSV contains no valid events.")
+def run_detection_pipeline(db: Session, events: list[dict]) -> dict:
+    """
+    Shared detection pipeline — processes typed event dicts through the full
+    detection engine. Used by both /api/upload and /api/reload.
+    Returns summary dict.
+    """
 
     # Group events by host for per-host daily ERS tracking
     host_daily_ers: dict[str, dict[str, dict]] = {}  # {host_id: {day_str: {score, classification, signals}}}
@@ -225,3 +219,19 @@ async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get
         "critical_hosts": critical,
         "suspicious_hosts": suspicious,
     }
+
+
+@router.post("/api/upload")
+async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    content = await file.read()
+    try:
+        file_stream = io.StringIO(content.decode("utf-8"))
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid file encoding. Expected UTF-8 CSV.")
+
+    events = process_csv_stream(file_stream)
+
+    if not events:
+        raise HTTPException(status_code=400, detail="CSV contains no valid events.")
+
+    return run_detection_pipeline(db, events)
